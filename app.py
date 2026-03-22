@@ -1,263 +1,226 @@
-"""
-=========================================================
-AI KNOWLEDGE COPILOT — V1 PRO (CHAT + POLISHED UI)
-=========================================================
+############################################################
+# 🧠 AI KNOWLEDGE COPILOT — V1 (POLISHED UX VERSION)
+############################################################
+# DESCRIPTION:
+# This app allows users to upload documents and interact with them
+# using an AI-powered chat interface.
+#
+# FEATURES:
+# - Upload multiple documents (PDF, DOCX, PPTX, CSV, TXT)
+# - Ask questions about your documents
+# - Suggested questions (with loading feedback)
+# - Clean ChatGPT-style interface
+#
+# NOTE:
+# This version avoids LangChain for stability in deployment.
+############################################################
 
-This version upgrades:
-- Clean chat interface
-- Professional UI styling
-- Sidebar workspace model
-- Improved readability and spacing
-"""
 
-# =========================================================
-# 1. IMPORTS
-# =========================================================
-
+############################################################
+# 1. IMPORT LIBRARIES
+############################################################
 import streamlit as st
-from tempfile import NamedTemporaryFile
-
 from openai import OpenAI
-client = OpenAI()
+import tempfile
+import os
 
-from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-
-from langchain_community.document_loaders import PyPDFLoader
+from PyPDF2 import PdfReader
 from docx import Document as DocxDocument
 from pptx import Presentation
 import pandas as pd
 
-# =========================================================
-# 2. PAGE CONFIG + STYLING
-# =========================================================
 
+############################################################
+# 2. INITIALIZE APP + OPENAI CLIENT
+############################################################
 st.set_page_config(page_title="AI Knowledge Copilot", layout="wide")
 
-# 🎨 CUSTOM CSS (PRO LOOK)
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+
+############################################################
+# 3. CUSTOM UI STYLING (PRO LOOK)
+############################################################
 st.markdown("""
 <style>
-
-/* MAIN LAYOUT */
+.main {
+    background-color: #f8fafc;
+}
 .block-container {
     padding-top: 2rem;
 }
-
-/* SIDEBAR BACKGROUND */
-[data-testid="stSidebar"] {
-    background-color: #0f172a;
+h1 {
+    font-size: 2.5rem !important;
 }
-
-/* SIDEBAR TEXT (ONLY LABELS, NOT EVERYTHING) */
-[data-testid="stSidebar"] h1,
-[data-testid="stSidebar"] h2,
-[data-testid="stSidebar"] h3,
-[data-testid="stSidebar"] p,
-[data-testid="stSidebar"] label {
-    color: #e5e7eb !important;
-}
-
-/* FIX BUTTON TEXT */
-[data-testid="stSidebar"] .stButton button {
-    background-color: #1e293b;
-    color: white;
-    border-radius: 8px;
-    border: 1px solid #334155;
-}
-
-/* BUTTON HOVER */
-[data-testid="stSidebar"] .stButton button:hover {
-    background-color: #334155;
-}
-
-/* FILE UPLOADER TEXT */
-[data-testid="stSidebar"] .stFileUploader label {
-    color: #e5e7eb !important;
-}
-
-/* CHAT INPUT */
-.stChatInputContainer {
-    border-radius: 12px;
-}
-
-/* CHAT MESSAGES */
 .stChatMessage {
     border-radius: 12px;
-    padding: 12px;
+    padding: 10px;
 }
-
 </style>
 """, unsafe_allow_html=True)
 
-# =========================================================
-# 3. DOCUMENT CLASS
-# =========================================================
 
-class Document:
-    def __init__(self, page_content, metadata=None):
-        self.page_content = page_content
-        self.metadata = metadata if metadata else {}
+############################################################
+# 4. TITLE & APP DESCRIPTION
+############################################################
+st.title("🧠 AI Knowledge Copilot")
+st.markdown("### Analyze documents and interact with your knowledge using AI")
 
-# =========================================================
-# 4. FILE PROCESSING
-# =========================================================
+st.info("Upload documents on the left sidebar to start chatting with your data.")
 
-def process_file(file):
-    docs = []
 
-    with NamedTemporaryFile(delete=False) as tmp:
-        tmp.write(file.read())
-        file_path = tmp.name
+############################################################
+# 5. SIDEBAR (WORKSPACE + SUGGESTED QUESTIONS)
+############################################################
+with st.sidebar:
 
-    if file.name.endswith(".pdf"):
-        loader = PyPDFLoader(file_path)
-        docs = loader.load()
+    st.header("📂 Workspace")
+    st.markdown("Upload and manage your knowledge sources.")
 
-    elif file.name.endswith(".docx"):
-        doc = DocxDocument(file_path)
-        text = "\n".join([p.text for p in doc.paragraphs])
-        docs = [Document(text)]
+    uploaded_files = st.file_uploader(
+        "Upload files",
+        accept_multiple_files=True,
+        type=["pdf", "docx", "pptx", "csv", "txt"]
+    )
 
-    elif file.name.endswith(".pptx"):
-        prs = Presentation(file_path)
-        text = ""
+    st.divider()
+
+    st.subheader("💡 Suggested questions")
+
+    if "trigger_question" not in st.session_state:
+        st.session_state.trigger_question = None
+
+    def trigger(q):
+        st.session_state.trigger_question = q
+
+    st.button("Summarize these documents", on_click=trigger, args=("Summarize these documents",))
+    st.button("What are the key insights?", on_click=trigger, args=("What are the key insights?",))
+    st.button("What are the risks?", on_click=trigger, args=("What are the risks?",))
+    st.button("Compare these documents", on_click=trigger, args=("Compare these documents",))
+
+
+############################################################
+# 6. DOCUMENT PROCESSING (MULTI-FORMAT SUPPORT)
+############################################################
+def extract_text(file):
+    text = ""
+
+    if file.type == "application/pdf":
+        reader = PdfReader(file)
+        for page in reader.pages:
+            text += page.extract_text() or ""
+
+    elif file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        doc = DocxDocument(file)
+        for para in doc.paragraphs:
+            text += para.text + "\n"
+
+    elif file.type == "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+        prs = Presentation(file)
         for slide in prs.slides:
             for shape in slide.shapes:
                 if hasattr(shape, "text"):
                     text += shape.text + "\n"
-        docs = [Document(text)]
 
-    elif file.name.endswith(".csv"):
-        df = pd.read_csv(file_path)
-        docs = [Document(df.to_string())]
+    elif file.type == "text/csv":
+        df = pd.read_csv(file)
+        text += df.to_string()
 
-    return docs
+    elif file.type == "text/plain":
+        text += file.read().decode("utf-8")
 
-# =========================================================
-# 5. SIDEBAR (WORKSPACE)
-# =========================================================
+    return text
 
-with st.sidebar:
-    st.markdown("## Workspace")
-    st.caption("Upload and manage your knowledge sources")
 
-    uploaded_files = st.file_uploader(
-        "Upload files",
-        accept_multiple_files=True
-    )
-
-    if uploaded_files:
-        st.success(f"{len(uploaded_files)} files uploaded")
-
-    st.divider()
-
-    st.markdown("### Suggested questions")
-
-    suggested = [
-        "Summarize these documents",
-        "What are the key insights?",
-        "What are the risks?",
-        "Compare these documents"
-    ]
-
-    for q in suggested:
-        if st.button(q):
-            st.session_state["query"] = q
-
-# =========================================================
-# 6. MAIN HEADER
-# =========================================================
-
-st.markdown("# AI Knowledge Copilot")
-st.markdown(
-    "<div style='color:gray; margin-bottom:20px;'>Analyze documents and interact with knowledge using AI</div>",
-    unsafe_allow_html=True
-)
-
-# =========================================================
+############################################################
 # 7. BUILD KNOWLEDGE BASE
-# =========================================================
-
-all_docs = []
+############################################################
+all_text = ""
 
 if uploaded_files:
-    with st.spinner("Processing documents..."):
+    with st.spinner("📚 Processing documents..."):
         for file in uploaded_files:
-            docs = process_file(file)
-            all_docs.extend(docs)
+            all_text += extract_text(file) + "\n\n"
 
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,
-        chunk_overlap=50
-    )
+    st.success(f"✅ {len(uploaded_files)} files processed successfully")
 
-    split_docs = splitter.split_documents(all_docs)
 
-    embeddings = OpenAIEmbeddings()
-    db = FAISS.from_documents(split_docs, embeddings)
+############################################################
+# 8. CHAT MEMORY INITIALIZATION
+############################################################
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-    st.success(f"{len(split_docs)} chunks indexed successfully")
 
-# =========================================================
-# 8. CHAT STATE
-# =========================================================
+############################################################
+# 9. DISPLAY CHAT HISTORY
+############################################################
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
 
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
 
-query = st.chat_input("Ask anything about your documents...")
+############################################################
+# 10. HANDLE USER INPUT (CHAT + SUGGESTED QUESTIONS)
+############################################################
+user_input = st.chat_input("Ask anything about your documents...")
 
-# Suggested question trigger
-if "query" in st.session_state:
-    query = st.session_state["query"]
-    del st.session_state["query"]
+# PRIORITY: Suggested question triggers
+if st.session_state.trigger_question:
+    user_input = st.session_state.trigger_question
+    st.session_state.trigger_question = None
 
-# =========================================================
-# 9. CHAT LOGIC
-# =========================================================
 
-if query and uploaded_files:
+############################################################
+# 11. PROCESS QUERY + SHOW LOADING FEEDBACK
+############################################################
+if user_input and all_text:
 
-    st.session_state.chat_history.append(("user", query))
+    # Show user message
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    with st.chat_message("user"):
+        st.markdown(user_input)
 
-    docs = db.similarity_search(query, k=3)
-    context = "\n\n".join([d.page_content for d in docs])
+    # 🔥 LOADING FEEDBACK (THIS IS YOUR REQUEST)
+    with st.chat_message("assistant"):
+        with st.spinner("🤖 Thinking... analyzing your documents..."):
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "Answer ONLY from the provided context."},
-            {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query}"}
-        ]
-    )
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert AI assistant helping analyze documents."
+                    },
+                    {
+                        "role": "user",
+                        "content": f"""
+                        Use the following documents to answer the question.
 
-    answer = response.choices[0].message.content
+                        DOCUMENTS:
+                        {all_text[:12000]}
 
-    st.session_state.chat_history.append(("assistant", answer, docs))
+                        QUESTION:
+                        {user_input}
+                        """
+                    }
+                ]
+            )
 
-# =========================================================
-# 10. CHAT UI (CHATGPT STYLE)
-# =========================================================
+            answer = response.choices[0].message.content
 
-for msg in st.session_state.chat_history:
+            st.markdown(answer)
 
-    if msg[0] == "user":
-        with st.chat_message("user"):
-            st.write(msg[1])
+    st.session_state.messages.append({"role": "assistant", "content": answer})
 
-    elif msg[0] == "assistant":
-        with st.chat_message("assistant"):
-            st.write(msg[1])
 
-            with st.expander("Sources"):
-                for i, d in enumerate(msg[2]):
-                    st.markdown(f"**Source {i+1}**")
-                    st.write(d.page_content[:300])
+############################################################
+# 12. EMPTY STATE (NO FILES)
+############################################################
+elif user_input and not all_text:
+    st.warning("⚠️ Please upload documents first.")
 
-# =========================================================
-# 11. EMPTY STATE
-# =========================================================
 
-if not uploaded_files:
-    st.info("Upload documents from the sidebar to begin.")
+############################################################
+# END OF APP
+############################################################
