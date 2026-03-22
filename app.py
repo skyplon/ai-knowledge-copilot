@@ -1,71 +1,73 @@
 ############################################################
-# 🧠 AI KNOWLEDGE COPILOT — V1 (SELF-DOCUMENTED VERSION)
+# 🧠 AI KNOWLEDGE COPILOT — V1 (PROFESSIONAL PORTFOLIO VERSION)
 ############################################################
-"""
-OVERVIEW
-------------------------------------------------------------
-This application is an AI-powered document analysis tool that:
-- Ingests multiple file types (PDF, DOCX, PPTX, CSV, TXT)
-- Converts them into a unified text representation
-- Enables users to ask questions using a chat interface
-- Uses an LLM (OpenAI GPT-4o-mini) to generate answers
-
-ARCHITECTURE (RAG-LITE APPROACH)
-------------------------------------------------------------
-Instead of a full vector database pipeline, this version uses:
-
-    Documents → Text Extraction → Context Injection → LLM
-
-This simplifies deployment while still enabling contextual reasoning.
-
-KEY TECHNOLOGIES
-------------------------------------------------------------
-- Streamlit → UI framework
-- OpenAI GPT-4o-mini → Language model (reasoning engine)
-- PyPDF2 / python-docx / python-pptx → File parsing
-- Pandas → Structured data handling
-
-DESIGN PRINCIPLES
-------------------------------------------------------------
-- Simplicity over complexity (no heavy frameworks)
-- Clean UX (chat-based interaction)
-- Stateful UI (chat memory + feedback system)
-- Deployment-ready architecture
-"""
+# OVERVIEW
+# ----------------------------------------------------------
+# This application is an AI-powered document analysis tool.
+#
+# It allows users to:
+# - Upload multiple file types (PDF, DOCX, PPTX, CSV, TXT)
+# - Convert them into a unified text-based knowledge base
+# - Ask natural language questions
+# - Receive AI-generated answers grounded in those documents
+#
+# ARCHITECTURE (RAG-LITE)
+# ----------------------------------------------------------
+# This app uses a simplified Retrieval-Augmented Generation approach:
+#
+#   Documents → Text Extraction → Context Injection → LLM → Answer
+#
+# Instead of embeddings/vector DBs, we inject document content
+# directly into the LLM prompt (faster, simpler, MVP-friendly).
+#
+# TECHNOLOGIES USED
+# ----------------------------------------------------------
+# - Streamlit → UI framework (chat interface + layout)
+# - OpenAI GPT-4o-mini → Language model (reasoning engine)
+# - PyPDF2 → PDF parsing
+# - python-docx → Word document parsing
+# - python-pptx → PowerPoint parsing
+# - pandas → CSV / structured data handling
+#
+# DESIGN PRINCIPLES
+# ----------------------------------------------------------
+# - Simplicity over complexity (no LangChain / vector DB yet)
+# - Clean UX (chat-based interaction like ChatGPT)
+# - Stateful interaction (chat memory using session_state)
+# - Deployment-ready (Streamlit Cloud compatible)
+############################################################
 
 
 ############################################################
-# 1. IMPORTS — External Libraries & Dependencies
+# 1. IMPORTS — Load Required Libraries
 ############################################################
-"""
-This section loads all required libraries.
+# This section imports all dependencies needed for:
+# - UI rendering (Streamlit)
+# - AI inference (OpenAI)
+# - File parsing (PDF, DOCX, PPTX, CSV)
+############################################################
 
-We intentionally use lightweight, well-supported libraries
-to avoid deployment issues and keep the system stable.
-"""
+import streamlit as st
+from openai import OpenAI
+import uuid
 
-import streamlit as st                  # UI framework
-from openai import OpenAI              # LLM API client
-import uuid                            # Unique IDs for messages (prevents UI bugs)
-
-# File processing libraries (multimodal ingestion)
-from PyPDF2 import PdfReader           # PDF parsing
-from docx import Document as DocxDocument   # Word parsing
-from pptx import Presentation          # PowerPoint parsing
-import pandas as pd                    # CSV / structured data
+from PyPDF2 import PdfReader
+from docx import Document as DocxDocument
+from pptx import Presentation
+import pandas as pd
 
 
 ############################################################
 # 2. APPLICATION CONFIGURATION
 ############################################################
-"""
-Initializes:
-- Page layout
-- OpenAI client using secure environment variables
-
-IMPORTANT:
-API keys are stored in Streamlit secrets for security.
-"""
+# Initializes:
+# - Streamlit page settings
+# - OpenAI client using secure API key
+#
+# NOTE:
+# The API key must be stored in Streamlit Secrets:
+# st.secrets["OPENAI_API_KEY"]
+############################################################
 
 st.set_page_config(page_title="AI Knowledge Copilot", layout="wide")
 
@@ -75,61 +77,53 @@ client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 ############################################################
 # 3. UI STYLING (LIGHTWEIGHT DESIGN SYSTEM)
 ############################################################
-"""
-Applies custom CSS to improve:
-- Spacing
-- Readability
-- Chat message appearance
-
-This mimics a minimal SaaS-style interface.
-"""
+# Applies custom CSS to improve:
+# - Spacing
+# - Chat bubble appearance
+# - Overall readability
+#
+# This mimics a minimal SaaS / ChatGPT-like UI
+############################################################
 
 st.markdown("""
 <style>
-.block-container {
-    padding-top: 2rem;
-}
-.stChatMessage {
-    border-radius: 12px;
-    padding: 10px;
-}
+.block-container { padding-top: 2rem; }
+.stChatMessage { border-radius: 12px; padding: 10px; }
 </style>
 """, unsafe_allow_html=True)
 
 
 ############################################################
-# 4. HEADER — APPLICATION TITLE & DESCRIPTION
+# 4. HEADER — Main Application Title
 ############################################################
-"""
-Defines the main entry point of the UI.
-
-Provides users with context on what the application does.
-"""
+# Provides:
+# - Product name
+# - Short description for users
+############################################################
 
 st.title("🧠 AI Knowledge Copilot")
 st.markdown("### Analyze documents and interact with your knowledge using AI")
 
 
 ############################################################
-# 5. SIDEBAR — WORKSPACE (CONTROL PLANE)
+# 5. SIDEBAR — WORKSPACE (CONTROL PANEL)
 ############################################################
-"""
-The sidebar acts as the CONTROL PLANE of the application.
-
-Responsibilities:
-- File ingestion (upload documents)
-- User guidance (suggested questions)
-
-UX PATTERN:
-Sidebar = Input / Controls
-Main Area = Interaction / Output
-"""
+# The sidebar acts as the CONTROL PLANE of the app.
+#
+# Responsibilities:
+# - Upload documents
+# - Provide suggested questions (UX enhancement)
+#
+# UX PATTERN:
+# Sidebar = Controls
+# Main Area = Interaction (chat)
+############################################################
 
 with st.sidebar:
 
     st.header("📂 Workspace")
 
-    # Multi-file uploader (supports multiple formats)
+    # File uploader supports multiple file types
     uploaded_files = st.file_uploader(
         "Upload files",
         accept_multiple_files=True,
@@ -140,18 +134,15 @@ with st.sidebar:
 
     st.subheader("💡 Suggested questions")
 
-    # Session state used to trigger queries programmatically
+    # Session state variable to trigger questions programmatically
     if "trigger_question" not in st.session_state:
         st.session_state.trigger_question = None
 
     def set_question(q):
-        """
-        Stores a predefined query in session state.
-        This allows buttons to simulate user input.
-        """
+        # Stores selected question → injected into chat input
         st.session_state.trigger_question = q
 
-    # Suggested prompts improve usability and discovery
+    # Predefined prompts improve usability and onboarding
     st.button("Summarize documents", on_click=set_question, args=("Summarize these documents",))
     st.button("Key insights", on_click=set_question, args=("What are the key insights?",))
     st.button("Risks", on_click=set_question, args=("What are the risks?",))
@@ -161,38 +152,32 @@ with st.sidebar:
 ############################################################
 # 6. DOCUMENT PROCESSING (MULTIMODAL INGESTION)
 ############################################################
-"""
-This function extracts text from multiple file formats.
-
-CORE IDEA:
-Different data types → normalized into plain text
-
-This is critical because LLMs operate on text input.
-
-SUPPORTED FORMATS:
-- PDF → page-based extraction
-- DOCX → paragraph extraction
-- PPTX → slide + shape extraction
-- CSV → structured data → string
-- TXT → raw text
-"""
+# This function converts different file formats into plain text.
+#
+# WHY THIS MATTERS:
+# LLMs operate on text → all formats must be normalized
+#
+# Supported formats:
+# - PDF → page text extraction
+# - DOCX → paragraph extraction
+# - PPTX → slide text extraction
+# - CSV → structured data → string
+# - TXT → raw text
+############################################################
 
 def extract_text(file):
     text = ""
 
-    # -------- PDF --------
     if file.type == "application/pdf":
         reader = PdfReader(file)
         for page in reader.pages:
             text += page.extract_text() or ""
 
-    # -------- DOCX --------
     elif file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
         doc = DocxDocument(file)
         for p in doc.paragraphs:
             text += p.text + "\n"
 
-    # -------- PPTX --------
     elif file.type == "application/vnd.openxmlformats-officedocument.presentationml.presentation":
         prs = Presentation(file)
         for slide in prs.slides:
@@ -200,12 +185,10 @@ def extract_text(file):
                 if hasattr(shape, "text"):
                     text += shape.text + "\n"
 
-    # -------- CSV --------
     elif file.type == "text/csv":
         df = pd.read_csv(file)
         text += df.to_string()
 
-    # -------- TXT --------
     elif file.type == "text/plain":
         text += file.read().decode("utf-8")
 
@@ -215,17 +198,11 @@ def extract_text(file):
 ############################################################
 # 7. KNOWLEDGE BASE CONSTRUCTION
 ############################################################
-"""
-This step builds a SINGLE CONTEXT STRING from all uploaded documents.
-
-ALGORITHM:
-- Iterate through files
-- Extract text
-- Concatenate into unified context
-
-NOTE:
-This is a simplified RAG approach (no embeddings).
-"""
+# Aggregates all uploaded documents into a single context string.
+#
+# NOTE:
+# This replaces vector search in this MVP version.
+############################################################
 
 all_text = ""
 
@@ -234,54 +211,43 @@ if uploaded_files:
         for file in uploaded_files:
             all_text += extract_text(file) + "\n\n"
 
-    st.success(f"{len(uploaded_files)} files processed")
+    st.success(f"✅ {len(uploaded_files)} files processed successfully")
 
 
 ############################################################
 # 8. SESSION STATE (CHAT MEMORY)
 ############################################################
-"""
-Stores conversation history across reruns.
-
-STRUCTURE:
-[
-    {
-        id: unique identifier,
-        role: "user" or "assistant",
-        content: message text,
-        feedback: optional (for assistant)
-    }
-]
-"""
+# Stores conversation history across interactions.
+#
+# STRUCTURE:
+# { id, role, content, feedback }
+############################################################
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 
 ############################################################
-# 9. CHAT RENDERING (CONVERSATIONAL UI)
+# 9. CHAT RENDERING (UI)
 ############################################################
-"""
-Displays chat messages in order.
-
-Includes:
-- Chat bubbles
-- Feedback system (👍 👎)
-- Unique IDs to avoid Streamlit key collisions
-"""
+# Displays:
+# - Chat messages
+# - Feedback buttons (👍 👎)
+#
+# Uses unique IDs to prevent Streamlit key collisions
+############################################################
 
 for msg in st.session_state.messages:
 
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-        # Feedback only for AI responses
         if msg["role"] == "assistant":
 
             msg_id = msg["id"]
             disabled = msg.get("feedback") is not None
 
-            col1, col2 = st.columns([1, 1])
+            col1, col2 = st.columns(2)
 
             with col1:
                 if st.button("👍", key=f"up_{msg_id}", disabled=disabled):
@@ -293,7 +259,6 @@ for msg in st.session_state.messages:
                     msg["feedback"] = "down"
                     st.rerun()
 
-            # Feedback confirmation UI
             if msg.get("feedback") == "up":
                 st.success("Marked as helpful")
 
@@ -302,17 +267,14 @@ for msg in st.session_state.messages:
 
 
 ############################################################
-# 10. USER INPUT HANDLING
+# 10. INPUT HANDLING
 ############################################################
-"""
-Handles two types of input:
-1. Manual user input (chat box)
-2. Suggested questions (sidebar buttons)
+# Supports:
+# - Manual user input
+# - Suggested question injection
+############################################################
 
-This improves usability and onboarding.
-"""
-
-user_input = st.chat_input("Ask about your documents...")
+user_input = st.chat_input("Ask anything about your documents...")
 
 if st.session_state.trigger_question:
     user_input = st.session_state.trigger_question
@@ -320,13 +282,22 @@ if st.session_state.trigger_question:
 
 
 ############################################################
-# 11. AI RESPONSE GENERATION + GUARDRAILS
+# 11. AI RESPONSE GENERATION (LLM CORE)
 ############################################################
+# This is the core intelligence layer.
+#
+# MODEL:
+# - GPT-4o-mini
+#
+# PROCESS:
+# - Inject document context + user question
+# - Generate grounded response
+############################################################
+
 if user_input:
 
     if all_text:
 
-        # Store user message
         st.session_state.messages.append({
             "id": str(uuid.uuid4()),
             "role": "user",
@@ -336,14 +307,13 @@ if user_input:
         with st.chat_message("user"):
             st.markdown(user_input)
 
-        # Generate AI response
         with st.chat_message("assistant"):
             with st.spinner("🤖 Thinking..."):
 
                 response = client.chat.completions.create(
                     model="gpt-4o-mini",
                     messages=[
-                        {"role": "system", "content": "Answer using ONLY the provided documents."},
+                        {"role": "system", "content": "Answer ONLY using the provided documents."},
                         {"role": "user", "content": f"{all_text[:12000]}\n\nQuestion: {user_input}"}
                     ]
                 )
@@ -351,7 +321,6 @@ if user_input:
                 answer = response.choices[0].message.content
                 st.markdown(answer)
 
-        # Save assistant message
         st.session_state.messages.append({
             "id": str(uuid.uuid4()),
             "role": "assistant",
