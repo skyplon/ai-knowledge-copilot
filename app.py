@@ -30,10 +30,6 @@
 # ============================================================
 
 import streamlit as st
-import pytesseract
-from PIL import Image
-import whisper
-import subprocess
 import pandas as pd
 import xml.etree.ElementTree as ET
 
@@ -48,6 +44,22 @@ from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.chat_models import ChatOpenAI
 
+# Optional dependencies (for multimodal support)
+
+OCR_AVAILABLE = True
+AUDIO_AVAILABLE = True
+
+try:
+    import pytesseract
+    from PIL import Image
+except:
+    OCR_AVAILABLE = False
+
+try:
+    import whisper
+    import subprocess
+except:
+    AUDIO_AVAILABLE = False
 
 # ============================================================
 # SYSTEM CONFIGURATION
@@ -215,18 +227,30 @@ def process_file(file):
             docs = [Document(page_content=ET.tostring(tree.getroot(), encoding="unicode"))]
 
         elif file.name.lower().endswith((".png",".jpg",".jpeg")):
-            text = pytesseract.image_to_string(Image.open(file_path))
-            docs = [Document(page_content=text)]
+            if OCR_AVAILABLE:
+                text = pytesseract.image_to_string(Image.open(file_path))
+                docs = [Document(page_content=text)]
+            else:
+                st.warning("Image OCR not supported in this environment")
+                docs = []
 
         elif file.name.lower().endswith((".mp3",".wav")):
-            result = whisper.load_model("base").transcribe(file_path)
-            docs = [Document(page_content=result["text"])]
+            if AUDIO_AVAILABLE:
+                result = whisper.load_model("base").transcribe(file_path)
+                docs = [Document(page_content=result["text"])]
+            else:
+                st.warning("Audio processing not supported in this environment")
+                docs = []
 
         elif file.name.lower().endswith(".mp4"):
-            audio_path = file_path + ".mp3"
-            subprocess.run(["ffmpeg","-i",file_path,"-q:a","0","-map","a",audio_path])
-            result = whisper.load_model("base").transcribe(audio_path)
-            docs = [Document(page_content=result["text"])]
+            if AUDIO_AVAILABLE:
+                audio_path = file_path + ".mp3"
+                subprocess.run(["ffmpeg","-i",file_path,"-q:a","0","-map","a",audio_path])
+                result = whisper.load_model("base").transcribe(audio_path)
+                docs = [Document(page_content=result["text"])]
+            else:
+                st.warning("Video processing not supported in this environment")
+                docs = []
 
     except Exception as e:
         st.warning(f"Failed to process {file.name}")
