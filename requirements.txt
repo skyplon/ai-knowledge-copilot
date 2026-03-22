@@ -1,10 +1,6 @@
 streamlit
 openai
-langchain-community
-langchain-text-splitters
-faiss-cpu
-pypdf
+PyPDF2
 python-docx
 python-pptx
 pandas
-tiktoken
