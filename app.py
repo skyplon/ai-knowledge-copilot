@@ -55,8 +55,9 @@ import pandas as pd
 # CUSTOM DOCUMENT CLASS (replaces LangChain Document)
 # =========================================================
 class Document:
-    def __init__(self, page_content):
+    def __init__(self, page_content, metadata=None):
         self.page_content = page_content
+        self.metadata = metadata if metadata else {}
 
 # =========================================================
 # 2. UI CONFIGURATION
