@@ -68,7 +68,7 @@ class Document:
 # SIDEBAR (WORKSPACE PANEL)
 # =========================================================
 with st.sidebar:
-    st.title("Workspace")
+    st.markdown("## Workspace")
 
     st.markdown("Upload and manage your knowledge sources")
 
@@ -76,6 +76,9 @@ with st.sidebar:
         "Upload files",
         accept_multiple_files=True
     )
+
+    if uploaded_files:
+        st.success(f"{len(uploaded_files)} files uploaded")
 
     st.divider()
 
@@ -91,6 +94,7 @@ with st.sidebar:
     for q in suggested_questions:
         if st.button(q):
             st.session_state["query"] = q
+
 
 # =========================================================
 # MAIN PAGE HEADER
@@ -169,8 +173,8 @@ if all_docs:
                     st.markdown(f"**Source {i+1}**")
                     st.write(d.page_content[:500])
 
-else:
-    st.info("Upload documents to begin")
+if not uploaded_files:
+    st.info("👈 Upload documents from the workspace panel to begin")
 
 # =========================================================
 # 3. FILE PROCESSING FUNCTION
@@ -218,11 +222,6 @@ def process_file(file):
 # 4. FILE UPLOAD INTERFACE
 # =========================================================
 # Allows users to upload multiple files
-
-uploaded_files = st.file_uploader(
-    "📂 Upload your files",
-    accept_multiple_files=True
-)
 
 all_docs = []
 
