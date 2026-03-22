@@ -36,7 +36,7 @@ import xml.etree.ElementTree as ET
 from docx import Document as DocxDocument
 from pptx import Presentation
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.chains import RetrievalQA
 from langchain.schema import Document
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
