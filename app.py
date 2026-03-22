@@ -320,73 +320,46 @@ if st.session_state.trigger_question:
 
 
 ############################################################
-# 11. AI RESPONSE GENERATION (LLM INFERENCE)
+# 11. AI RESPONSE GENERATION + GUARDRAILS
 ############################################################
-"""
-This is the CORE INTELLIGENCE of the system.
+if user_input:
 
-MODEL:
-- GPT-4o-mini (OpenAI)
+    if all_text:
 
-PROCESS:
-1. Combine document context + user query
-2. Send prompt to LLM
-3. Generate grounded response
+        # Store user message
+        st.session_state.messages.append({
+            "id": str(uuid.uuid4()),
+            "role": "user",
+            "content": user_input
+        })
 
-ALGORITHM:
-Prompt-based retrieval (no embeddings)
-"""
+        with st.chat_message("user"):
+            st.markdown(user_input)
 
-if user_input and all_text:
+        # Generate AI response
+        with st.chat_message("assistant"):
+            with st.spinner("🤖 Thinking..."):
 
-    # Store user message
-    st.session_state.messages.append({
-        "id": str(uuid.uuid4()),
-        "role": "user",
-        "content": user_input
-    })
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": "Answer using ONLY the provided documents."},
+                        {"role": "user", "content": f"{all_text[:12000]}\n\nQuestion: {user_input}"}
+                    ]
+                )
 
-    with st.chat_message("user"):
-        st.markdown(user_input)
+                answer = response.choices[0].message.content
+                st.markdown(answer)
 
-    # Generate AI response
-    with st.chat_message("assistant"):
-        with st.spinner("🤖 Thinking..."):
+        # Save assistant message
+        st.session_state.messages.append({
+            "id": str(uuid.uuid4()),
+            "role": "assistant",
+            "content": answer,
+            "feedback": None
+        })
 
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "Answer using ONLY the provided documents."
-                    },
-                    {
-                        "role": "user",
-                        "content": f"{all_text[:12000]}\n\nQuestion: {user_input}"
-                    }
-                ]
-            )
+        st.rerun()
 
-            answer = response.choices[0].message.content
-            st.markdown(answer)
-
-    # Store assistant message with feedback field
-    st.session_state.messages.append({
-        "id": str(uuid.uuid4()),
-        "role": "assistant",
-        "content": answer,
-        "feedback": None
-    })
-
-    st.rerun()
-
-
-############################################################
-# 12. EMPTY STATE HANDLING
-############################################################
-"""
-Prevents user errors when no documents are uploaded.
-"""
-
-elif user_input and not all_text:
-    st.warning("Please upload documents first.")
+    else:
+        st.warning("Please upload documents first.")
