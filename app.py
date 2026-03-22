@@ -41,7 +41,6 @@ client = OpenAI()
 # Vector DB + embeddings (safe LangChain components only)
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain.schema import Document
 
 # Text splitting (modern compatible module)
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -51,6 +50,13 @@ from langchain_community.document_loaders import PyPDFLoader
 from docx import Document as DocxDocument
 from pptx import Presentation
 import pandas as pd
+
+# =========================================================
+# CUSTOM DOCUMENT CLASS (replaces LangChain Document)
+# =========================================================
+class Document:
+    def __init__(self, page_content):
+        self.page_content = page_content
 
 # =========================================================
 # 2. UI CONFIGURATION
