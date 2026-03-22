@@ -151,14 +151,39 @@ if uploaded_files:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+if "feedback" not in st.session_state:
+    st.session_state.feedback = []
 
 ############################################################
 # 9. DISPLAY CHAT HISTORY
 ############################################################
-for msg in st.session_state.messages:
+for i, msg in enumerate(st.session_state.messages):
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
+        # 👉 Only show feedback for assistant messages
+        if msg["role"] == "assistant":
+
+            col1, col2 = st.columns([1, 1])
+
+            with col1:
+                if st.button("👍", key=f"up_{i}"):
+                    st.session_state.feedback.append({
+                        "message_id": i,
+                        "feedback": "up"
+                    })
+                    st.success("Thanks for your feedback!")
+
+            with col2:
+                if st.button("👎", key=f"down_{i}"):
+                    st.session_state.feedback.append({
+                        "message_id": i,
+                        "feedback": "down"
+                    })
+                    st.info("Feedback noted. We'll improve!")
+
+    with st.expander("📊 Feedback log (demo purposes)"):
+        st.write(st.session_state.feedback)
 
 ############################################################
 # 10. HANDLE USER INPUT (CHAT + SUGGESTED QUESTIONS)
