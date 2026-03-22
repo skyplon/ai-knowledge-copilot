@@ -1,191 +1,74 @@
 """
-AI KNOWLEDGE COPILOT (V1 - CLEAN RAG IMPLEMENTATION)
+=========================================================
+AI KNOWLEDGE COPILOT — V1 (CHAT-STYLE RAG APPLICATION)
+=========================================================
 
----------------------------------------------------
 WHAT THIS APP DOES
----------------------------------------------------
-This application allows users to upload multiple files (PDF, DOCX, PPTX, CSV)
-and interact with them using natural language.
+---------------------------------------------------------
+This application allows users to:
+- Upload multiple documents (PDF, DOCX, PPTX, CSV)
+- Convert them into a searchable knowledge base
+- Ask questions in a chat-style interface
+- Receive AI-generated answers grounded in the documents
 
-It implements a Retrieval-Augmented Generation (RAG) system:
-1. Extracts text from files
-2. Splits text into chunks
-3. Converts chunks into embeddings
-4. Stores embeddings in a vector database (FAISS)
-5. Retrieves relevant chunks based on user query
-6. Sends context + question to an LLM (OpenAI)
-7. Returns grounded answers + sources
+ARCHITECTURE OVERVIEW (RAG PIPELINE)
+---------------------------------------------------------
+1. File ingestion (multi-format support)
+2. Text extraction
+3. Chunking (text splitting)
+4. Embeddings (OpenAI)
+5. Vector storage (FAISS)
+6. Retrieval (semantic search)
+7. Generation (LLM response with context)
 
----------------------------------------------------
-KEY DESIGN PRINCIPLES
----------------------------------------------------
-- No heavy LangChain abstractions (more stable for deployment)
-- Modular file processing
-- Clear separation of responsibilities
-- Production-friendly architecture
+DESIGN PRINCIPLES
+---------------------------------------------------------
+- Clean, modular structure
+- Minimal dependencies (stable deployment)
+- Chat-style UX (product-ready)
+- Clear documentation for readability
 """
 
 # =========================================================
 # 1. IMPORTS & DEPENDENCIES
 # =========================================================
-# This section loads all required libraries
 
 import streamlit as st
-import os
 from tempfile import NamedTemporaryFile
 
-# OpenAI client (LLM)
+# OpenAI
 from openai import OpenAI
 client = OpenAI()
 
-# Vector DB + embeddings (safe LangChain components only)
+# Vector search
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import OpenAIEmbeddings
-
-# Text splitting (modern compatible module)
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-# File loaders
+# File processing
 from langchain_community.document_loaders import PyPDFLoader
 from docx import Document as DocxDocument
 from pptx import Presentation
 import pandas as pd
 
 # =========================================================
-# CUSTOM DOCUMENT CLASS (replaces LangChain Document)
+# 2. CUSTOM DOCUMENT CLASS
 # =========================================================
+# Replaces LangChain Document (simpler + avoids dependency issues)
+
 class Document:
     def __init__(self, page_content, metadata=None):
         self.page_content = page_content
         self.metadata = metadata if metadata else {}
 
 # =========================================================
-# 2. UI CONFIGURATION
-# =========================================================
-# This defines the layout and initial UI components
-
-# =========================================================
-# SIDEBAR (WORKSPACE PANEL)
-# =========================================================
-with st.sidebar:
-    st.markdown("## Workspace")
-
-    st.markdown("Upload and manage your knowledge sources")
-
-    uploaded_files = st.file_uploader(
-        "Upload files",
-        accept_multiple_files=True
-    )
-
-    if uploaded_files:
-        st.success(f"{len(uploaded_files)} files uploaded")
-
-    st.divider()
-
-    st.markdown("### Suggested questions")
-
-    suggested_questions = [
-        "Summarize these documents",
-        "What are the key insights?",
-        "What are the risks or gaps?",
-        "Compare these documents"
-    ]
-
-    for q in suggested_questions:
-        if st.button(q):
-            st.session_state["query"] = q
-
-
-# =========================================================
-# MAIN PAGE HEADER
-# =========================================================
-st.title("AI Knowledge Copilot")
-st.caption("Analyze documents, data, and media using a unified AI interface.")
-
-# =========================================================
-# DOCUMENT PROCESSING
-# =========================================================
-all_docs = []
-
-if uploaded_files:
-    with st.spinner("Processing documents..."):
-        for file in uploaded_files:
-            docs = process_file(file)
-            all_docs.extend(docs)
-
-# =========================================================
-# BUILD VECTOR STORE
-# =========================================================
-if all_docs:
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,
-        chunk_overlap=50
-    )
-
-    split_docs = splitter.split_documents(all_docs)
-
-    embeddings = OpenAIEmbeddings()
-    db = FAISS.from_documents(split_docs, embeddings)
-
-    st.success(f"{len(split_docs)} chunks indexed")
-
-    # =====================================================
-    # QUERY INPUT
-    # =====================================================
-    query = st.text_input(
-        "Ask a question about your data",
-        value=st.session_state.get("query", "")
-    )
-
-    if query:
-        with st.spinner("Generating answer..."):
-
-            docs = db.similarity_search(query, k=3)
-            context = "\n\n".join([d.page_content for d in docs])
-
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "Answer based only on the provided context."
-                    },
-                    {
-                        "role": "user",
-                        "content": f"Context:\n{context}\n\nQuestion: {query}"
-                    }
-                ]
-            )
-
-            answer = response.choices[0].message.content
-
-            # =================================================
-            # ANSWER DISPLAY
-            # =================================================
-            st.subheader("Answer")
-            st.write(answer)
-
-            # =================================================
-            # SOURCES (COLLAPSIBLE)
-            # =================================================
-            with st.expander("View sources"):
-                for i, d in enumerate(docs):
-                    st.markdown(f"**Source {i+1}**")
-                    st.write(d.page_content[:500])
-
-if not uploaded_files:
-    st.info("👈 Upload documents from the workspace panel to begin")
-
-# =========================================================
 # 3. FILE PROCESSING FUNCTION
 # =========================================================
-# This function converts uploaded files into text documents
-# that the AI system can understand
+# Converts uploaded files into text documents
 
 def process_file(file):
     docs = []
 
-    # Save file temporarily
     with NamedTemporaryFile(delete=False) as tmp:
         tmp.write(file.read())
         file_path = tmp.name
@@ -219,25 +102,62 @@ def process_file(file):
     return docs
 
 # =========================================================
-# 4. FILE UPLOAD INTERFACE
+# 4. APP CONFIGURATION
 # =========================================================
-# Allows users to upload multiple files
+
+st.set_page_config(page_title="AI Knowledge Copilot", layout="wide")
+
+# =========================================================
+# 5. SIDEBAR (WORKSPACE CONTROL PANEL)
+# =========================================================
+# Handles file uploads + suggested queries
+
+with st.sidebar:
+    st.markdown("## Workspace")
+    st.caption("Upload and manage your knowledge sources")
+
+    uploaded_files = st.file_uploader(
+        "Upload files",
+        accept_multiple_files=True
+    )
+
+    if uploaded_files:
+        st.success(f"{len(uploaded_files)} files uploaded")
+
+    st.divider()
+
+    st.markdown("### Suggested questions")
+
+    suggested = [
+        "Summarize these documents",
+        "What are the key insights?",
+        "What are the risks?",
+        "Compare these documents"
+    ]
+
+    for q in suggested:
+        if st.button(q):
+            st.session_state["query"] = q
+
+# =========================================================
+# 6. MAIN HEADER
+# =========================================================
+
+st.title("AI Knowledge Copilot")
+st.caption("Analyze documents, data, and media using a unified AI interface.")
+
+# =========================================================
+# 7. BUILD KNOWLEDGE BASE
+# =========================================================
+# Processes documents → chunks → embeddings → FAISS
 
 all_docs = []
 
 if uploaded_files:
-    for file in uploaded_files:
-        docs = process_file(file)
-        all_docs.extend(docs)
-
-# =========================================================
-# 5. BUILD VECTOR DATABASE (FAISS)
-# =========================================================
-# Converts documents into embeddings and stores them
-# for semantic search
-
-if all_docs:
-    st.info("Processing documents and building knowledge base...")
+    with st.spinner("Processing documents..."):
+        for file in uploaded_files:
+            docs = process_file(file)
+            all_docs.extend(docs)
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=500,
@@ -249,58 +169,68 @@ if all_docs:
     embeddings = OpenAIEmbeddings()
     db = FAISS.from_documents(split_docs, embeddings)
 
-    st.success(f"✅ {len(split_docs)} chunks indexed successfully")
+    st.success(f"{len(split_docs)} chunks indexed successfully")
 
-    # =====================================================
-    # 6. USER QUERY INTERFACE
-    # =====================================================
-    # Allows users to ask questions about uploaded data
+# =========================================================
+# 8. CHAT INTERFACE (CORE UX)
+# =========================================================
 
-    query = st.text_input("💬 Ask a question about your data")
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
-    if query:
-        # =================================================
-        # 7. RETRIEVAL STEP (Semantic Search)
-        # =================================================
-        # Find the most relevant document chunks
+query = st.chat_input("Ask a question about your documents")
 
-        docs = db.similarity_search(query, k=3)
+# Support suggested questions
+if "query" in st.session_state:
+    query = st.session_state["query"]
+    del st.session_state["query"]
 
-        context = "\n\n".join([d.page_content for d in docs])
+if query and uploaded_files:
 
-        # =================================================
-        # 8. GENERATION STEP (LLM RESPONSE)
-        # =================================================
-        # Send retrieved context + user question to OpenAI
+    # Add user message
+    st.session_state.chat_history.append(("user", query))
 
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are an AI assistant that answers questions using ONLY the provided context."
-                },
-                {
-                    "role": "user",
-                    "content": f"Context:\n{context}\n\nQuestion: {query}"
-                }
-            ]
-        )
+    # Retrieve context
+    docs = db.similarity_search(query, k=3)
+    context = "\n\n".join([d.page_content for d in docs])
 
-        answer = response.choices[0].message.content
+    # Generate answer
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "Answer ONLY using the provided context."},
+            {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query}"}
+        ]
+    )
 
-        # =================================================
-        # 9. OUTPUT DISPLAY
-        # =================================================
-        # Show answer + supporting sources
+    answer = response.choices[0].message.content
 
-        st.subheader("📌 Answer")
-        st.write(answer)
+    # Store assistant response
+    st.session_state.chat_history.append(("assistant", answer, docs))
 
-        st.subheader("📚 Sources (retrieved context)")
-        for i, d in enumerate(docs):
-            st.markdown(f"**Source {i+1}:**")
-            st.write(d.page_content[:500])
+# =========================================================
+# 9. CHAT DISPLAY (LIKE CHATGPT)
+# =========================================================
 
-else:
-    st.warning("Upload at least one file to begin.")
+for msg in st.session_state.chat_history:
+
+    if msg[0] == "user":
+        with st.chat_message("user"):
+            st.write(msg[1])
+
+    elif msg[0] == "assistant":
+        with st.chat_message("assistant"):
+            st.write(msg[1])
+
+            # Sources (collapsible)
+            with st.expander("Sources"):
+                for i, d in enumerate(msg[2]):
+                    st.markdown(f"**Source {i+1}**")
+                    st.write(d.page_content[:300])
+
+# =========================================================
+# 10. EMPTY STATE
+# =========================================================
+
+if not uploaded_files:
+    st.info("Upload documents from the sidebar to begin.")
