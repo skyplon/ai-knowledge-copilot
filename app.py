@@ -158,32 +158,36 @@ if "feedback" not in st.session_state:
 # 9. DISPLAY CHAT HISTORY
 ############################################################
 for i, msg in enumerate(st.session_state.messages):
+
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-        # 👉 Only show feedback for assistant messages
+        # 👉 Only assistant messages get feedback
         if msg["role"] == "assistant":
 
             col1, col2 = st.columns([1, 1])
 
             with col1:
                 if st.button("👍", key=f"up_{i}"):
-                    st.session_state.feedback.append({
-                        "message_id": i,
-                        "feedback": "up"
-                    })
-                    st.success("Thanks for your feedback!")
+                    st.session_state.messages[i]["feedback"] = "up"
+                    st.rerun()
 
             with col2:
                 if st.button("👎", key=f"down_{i}"):
-                    st.session_state.feedback.append({
-                        "message_id": i,
-                        "feedback": "down"
-                    })
-                    st.info("Feedback noted. We'll improve!")
+                    st.session_state.messages[i]["feedback"] = "down"
+                    st.rerun()
 
-    with st.expander("📊 Feedback log (demo purposes)"):
-        st.write(st.session_state.feedback)
+            # ✅ Show feedback confirmation
+            if msg.get("feedback") == "up":
+                st.success("Marked as helpful")
+
+            elif msg.get("feedback") == "down":
+                st.info("Marked as not helpful")
+
+disabled = msg.get("feedback") is not None
+
+st.button("👍", key=f"up_{i}", disabled=disabled)
+st.button("👎", key=f"down_{i}", disabled=disabled)
 
 ############################################################
 # 10. HANDLE USER INPUT (CHAT + SUGGESTED QUESTIONS)
@@ -236,7 +240,13 @@ if user_input and all_text:
 
             st.markdown(answer)
 
-    st.session_state.messages.append({"role": "assistant", "content": answer})
+    st.session_state.messages.append({
+    "role": "assistant",
+    "content": answer,
+    "feedback": None
+    })
+
+    st.rerun()
 
 
 ############################################################
