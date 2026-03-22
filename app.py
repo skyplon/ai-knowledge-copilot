@@ -38,34 +38,53 @@ st.set_page_config(page_title="AI Knowledge Copilot", layout="wide")
 # 🎨 CUSTOM CSS (PRO LOOK)
 st.markdown("""
 <style>
-.main {
-    padding-top: 2rem;
-}
 
+/* MAIN LAYOUT */
 .block-container {
     padding-top: 2rem;
 }
 
-h1 {
-    font-weight: 700;
-}
-
+/* SIDEBAR BACKGROUND */
 [data-testid="stSidebar"] {
     background-color: #0f172a;
+}
+
+/* SIDEBAR TEXT (ONLY LABELS, NOT EVERYTHING) */
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] label {
+    color: #e5e7eb !important;
+}
+
+/* FIX BUTTON TEXT */
+[data-testid="stSidebar"] .stButton button {
+    background-color: #1e293b;
     color: white;
+    border-radius: 8px;
+    border: 1px solid #334155;
 }
 
-[data-testid="stSidebar"] * {
-    color: white !important;
+/* BUTTON HOVER */
+[data-testid="stSidebar"] .stButton button:hover {
+    background-color: #334155;
 }
 
+/* FILE UPLOADER TEXT */
+[data-testid="stSidebar"] .stFileUploader label {
+    color: #e5e7eb !important;
+}
+
+/* CHAT INPUT */
+.stChatInputContainer {
+    border-radius: 12px;
+}
+
+/* CHAT MESSAGES */
 .stChatMessage {
     border-radius: 12px;
     padding: 12px;
-}
-
-.stTextInput input {
-    border-radius: 10px;
 }
 
 </style>
