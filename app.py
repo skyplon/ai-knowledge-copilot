@@ -64,18 +64,113 @@ class Document:
 # =========================================================
 # This defines the layout and initial UI components
 
-st.set_page_config(page_title="AI Knowledge Copilot", layout="wide")
+# =========================================================
+# SIDEBAR (WORKSPACE PANEL)
+# =========================================================
+with st.sidebar:
+    st.title("Workspace")
 
-st.title("🧠 AI Knowledge Copilot")
-st.markdown("""
-Upload documents and interact with your knowledge using AI.
+    st.markdown("Upload and manage your knowledge sources")
 
-Supported formats:
-- PDF
-- Word (DOCX)
-- PowerPoint (PPTX)
-- CSV (structured data)
-""")
+    uploaded_files = st.file_uploader(
+        "Upload files",
+        accept_multiple_files=True
+    )
+
+    st.divider()
+
+    st.markdown("### Suggested questions")
+
+    suggested_questions = [
+        "Summarize these documents",
+        "What are the key insights?",
+        "What are the risks or gaps?",
+        "Compare these documents"
+    ]
+
+    for q in suggested_questions:
+        if st.button(q):
+            st.session_state["query"] = q
+
+# =========================================================
+# MAIN PAGE HEADER
+# =========================================================
+st.title("AI Knowledge Copilot")
+st.caption("Analyze documents, data, and media using a unified AI interface.")
+
+# =========================================================
+# DOCUMENT PROCESSING
+# =========================================================
+all_docs = []
+
+if uploaded_files:
+    with st.spinner("Processing documents..."):
+        for file in uploaded_files:
+            docs = process_file(file)
+            all_docs.extend(docs)
+
+# =========================================================
+# BUILD VECTOR STORE
+# =========================================================
+if all_docs:
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=500,
+        chunk_overlap=50
+    )
+
+    split_docs = splitter.split_documents(all_docs)
+
+    embeddings = OpenAIEmbeddings()
+    db = FAISS.from_documents(split_docs, embeddings)
+
+    st.success(f"{len(split_docs)} chunks indexed")
+
+    # =====================================================
+    # QUERY INPUT
+    # =====================================================
+    query = st.text_input(
+        "Ask a question about your data",
+        value=st.session_state.get("query", "")
+    )
+
+    if query:
+        with st.spinner("Generating answer..."):
+
+            docs = db.similarity_search(query, k=3)
+            context = "\n\n".join([d.page_content for d in docs])
+
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Answer based only on the provided context."
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Context:\n{context}\n\nQuestion: {query}"
+                    }
+                ]
+            )
+
+            answer = response.choices[0].message.content
+
+            # =================================================
+            # ANSWER DISPLAY
+            # =================================================
+            st.subheader("Answer")
+            st.write(answer)
+
+            # =================================================
+            # SOURCES (COLLAPSIBLE)
+            # =================================================
+            with st.expander("View sources"):
+                for i, d in enumerate(docs):
+                    st.markdown(f"**Source {i+1}**")
+                    st.write(d.page_content[:500])
+
+else:
+    st.info("Upload documents to begin")
 
 # =========================================================
 # 3. FILE PROCESSING FUNCTION
