@@ -184,10 +184,10 @@ for i, msg in enumerate(st.session_state.messages):
             elif msg.get("feedback") == "down":
                 st.info("Marked as not helpful")
 
-disabled = msg.get("feedback") is not None
+            disabled = msg.get("feedback") is not None
 
-st.button("👍", key=f"up_{i}", disabled=disabled)
-st.button("👎", key=f"down_{i}", disabled=disabled)
+            st.button("👍", key=f"up_{i}", disabled=disabled)
+            st.button("👎", key=f"down_{i}", disabled=disabled)
 
 ############################################################
 # 10. HANDLE USER INPUT (CHAT + SUGGESTED QUESTIONS)
