@@ -73,9 +73,36 @@ st.set_page_config(page_title="AI Knowledge Copilot", layout="wide")
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
+############################################################
+# 3. ACCESS CONTROL (DEMO PROTECTION)
+############################################################
+# PURPOSE:
+# Restricts access to the app to prevent unauthorized usage
+# and protect OpenAI API credits.
+#
+# HOW IT WORKS:
+# - Prompts user for a password
+# - Compares against secure value in Streamlit secrets
+# - Blocks access if incorrect
+#
+# NOTE:
+# Store password in .streamlit/secrets.toml:
+# APP_PASSWORD = "your_password_here"
+############################################################
+
+import streamlit as st
+
+# Password input UI
+password = st.text_input("🔒 Enter access password to use the app", type="password")
+
+# Stop app if password is incorrect
+if password != st.secrets.get("APP_PASSWORD"):
+    st.warning("Access restricted. Please enter the correct password.")
+    st.stop()
+
 
 ############################################################
-# 3. UI STYLING (LIGHTWEIGHT DESIGN SYSTEM)
+# 4. UI STYLING (LIGHTWEIGHT DESIGN SYSTEM)
 ############################################################
 # Applies custom CSS to improve:
 # - Spacing
@@ -94,7 +121,7 @@ st.markdown("""
 
 
 ############################################################
-# 4. HEADER — Main Application Title
+# 5. HEADER — Main Application Title
 ############################################################
 # Provides:
 # - Product name
@@ -106,7 +133,7 @@ st.markdown("### Analyze documents and interact with your knowledge using AI")
 
 
 ############################################################
-# 5. SIDEBAR — WORKSPACE (CONTROL PANEL)
+# 6. SIDEBAR — WORKSPACE (CONTROL PANEL)
 ############################################################
 # The sidebar acts as the CONTROL PLANE of the app.
 #
@@ -150,7 +177,7 @@ with st.sidebar:
 
 
 ############################################################
-# 6. DOCUMENT PROCESSING (MULTIMODAL INGESTION)
+# 7. DOCUMENT PROCESSING (MULTIMODAL INGESTION)
 ############################################################
 # This function converts different file formats into plain text.
 #
@@ -196,7 +223,7 @@ def extract_text(file):
 
 
 ############################################################
-# 7. KNOWLEDGE BASE CONSTRUCTION
+# 8. KNOWLEDGE BASE CONSTRUCTION
 ############################################################
 # Aggregates all uploaded documents into a single context string.
 #
@@ -215,7 +242,7 @@ if uploaded_files:
 
 
 ############################################################
-# 8. SESSION STATE (CHAT MEMORY)
+# 9. SESSION STATE (CHAT MEMORY)
 ############################################################
 # Stores conversation history across interactions.
 #
@@ -228,7 +255,7 @@ if "messages" not in st.session_state:
 
 
 ############################################################
-# 9. CHAT RENDERING (UI)
+# 10. CHAT RENDERING (UI)
 ############################################################
 # Displays:
 # - Chat messages
@@ -267,7 +294,7 @@ for msg in st.session_state.messages:
 
 
 ############################################################
-# 10. INPUT HANDLING
+# 11. INPUT HANDLING
 ############################################################
 # Supports:
 # - Manual user input
@@ -282,7 +309,7 @@ if st.session_state.trigger_question:
 
 
 ############################################################
-# 11. AI RESPONSE GENERATION (LLM CORE)
+# 12. AI RESPONSE GENERATION (LLM CORE)
 ############################################################
 # This is the core intelligence layer.
 #
