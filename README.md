@@ -20,7 +20,7 @@ This project demonstrates a **Retrieval-Augmented Generation (RAG-lite)** archit
 ## 🖥️ Demo
 
 <p align="center">
-  <img src="assets/screenshot.png" width="800"/>
+  <img src="assets/Screenshot.png" width="800"/>
 </p>
 
 ---
