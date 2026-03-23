@@ -201,6 +201,14 @@ The model generates answers grounded in the documents.
 |No embeddings |	Reduces complexity
 |Context injection |	Works well for small-medium datasets
 
+## ⚠️ Known Limitations (V1)
+
+- Optimized for desktop usage  
+- Some mobile-uploaded PDFs may fail due to encoding differences  
+- OCR for scanned documents not yet supported  
+
+Future versions will improve mobile compatibility and document processing robustness.
+
 ## 🔥 Future Improvements
 * True RAG (FAISS / embeddings)
 * Inline citations (like ChatGPT)
