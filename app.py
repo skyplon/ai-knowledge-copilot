@@ -150,13 +150,13 @@ with st.sidebar:
 
     st.header("📂 Workspace")
 
+    st.info("💻 Best experience on desktop. Some mobile-uploaded files may not process correctly (V1 limitation).")
     # File uploader supports multiple file types
     uploaded_files = st.file_uploader(
         "Upload files",
         accept_multiple_files=True,
         type=["pdf", "docx", "pptx", "csv", "txt"]
     )
-
     st.divider()
 
     st.subheader("💡 Suggested questions")
@@ -235,11 +235,14 @@ all_text = ""
 
 if uploaded_files:
     with st.spinner("📚 Processing documents..."):
-        for file in uploaded_files:
+      for file in uploaded_files:
+        try:
             all_text += extract_text(file) + "\n\n"
+        except Exception as e:
+            st.warning(f"⚠️ Could not fully process {file.name}. Try uploading from desktop.")
+            continue
 
     st.success(f"✅ {len(uploaded_files)} files processed successfully")
-
 
 ############################################################
 # 9. SESSION STATE (CHAT MEMORY)
