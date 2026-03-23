@@ -17,12 +17,16 @@ This project demonstrates a **Retrieval-Augmented Generation (RAG-lite)** archit
 
 ---
 
-## 🖥️ Demo
+## 🌐 🖥️ Live Demo
 
+🚀 Try the app:  
+https://ai-knowledge-copilot-qqurmsj8tcmzugptlwo245.streamlit.app/
+> 
 <p align="center">
   <img src="assets/Screenshot.png" width="800"/>
 </p>
 
+> ⚠️ Demo environment — limited usage.
 ---
 
 ## 🎯 Why this project matters
