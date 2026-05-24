@@ -90,15 +90,15 @@ client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 # APP_PASSWORD = "your_password_here"
 ############################################################
 
-import streamlit as st
+#import streamlit as st
 
 # Password input UI
-password = st.text_input("🔒 Enter access password to use the app", type="password")
+#password = st.text_input("🔒 Enter access password to use the app", type="password")
 
 # Stop app if password is incorrect
-if password != st.secrets.get("APP_PASSWORD"):
-    st.warning("Access restricted. Please enter the correct password.")
-    st.stop()
+#if password != st.secrets.get("APP_PASSWORD"):
+#    st.warning("Access restricted. Please enter the correct password.")
+#    st.stop()
 
 
 ############################################################
