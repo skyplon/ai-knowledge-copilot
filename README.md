@@ -1,239 +1,212 @@
 # 🧠 AI Knowledge Copilot
 
-> Analyze documents, extract insights, and interact with your knowledge using AI.
+AI-powered document intelligence assistant built with OpenAI + Streamlit.
+
+Upload documents, ask questions in natural language, and generate context-aware insights using a lightweight Retrieval-Augmented Generation (RAG-lite) architecture.
 
 ---
 
-## 🚀 Overview
+## 🌐 Live Demo
 
-**AI Knowledge Copilot** is a lightweight, production-ready AI application that allows users to:
+🚀 https://ai-knowledge-copilot-qqurmsj8tcmzugptlwo245.streamlit.app/
 
-- 📂 Upload multiple document types (PDF, DOCX, PPTX, CSV, TXT)  
-- 🧠 Transform them into a unified knowledge base  
-- 💬 Ask natural language questions  
-- ⚡ Receive context-aware answers powered by AI  
-
-This project demonstrates a **Retrieval-Augmented Generation (RAG-lite)** architecture with a clean, ChatGPT-style user experience.
-
----
-
-## 🌐 🖥️ Live Demo
-
-🚀 Try the app:  
-https://ai-knowledge-copilot-qqurmsj8tcmzugptlwo245.streamlit.app/
+> 💻 Best experience on desktop (V1 limitation).
 > 
 <p align="center">
   <img src="assets/Screenshot.png" width="800"/>
 </p>
 
-> ⚠️ Demo environment — limited usage.
 ---
 
-## 🎯 Why this project matters
+## 🚀 Overview
 
-Most AI demos stop at “chat with a PDF.”  
+AI Knowledge Copilot enables users to:
 
-This project goes further by showing:
+- Upload multiple document types (PDF, DOCX, PPTX, CSV, TXT)
+- Extract and aggregate knowledge across files
+- Ask natural language questions
+- Generate AI-powered summaries and insights
+- Interact through a ChatGPT-style interface
 
-- Multi-document reasoning  
-- Multimodal ingestion (documents + structured data)  
-- Product-grade UX (chat interface, suggestions, feedback loop)  
-- Deployment-ready architecture (Streamlit Cloud)  
+This project demonstrates how enterprise AI copilots can transform unstructured data into conversational intelligence.
 
 ---
 
-## 🧠 Architecture
+## 🧠 Core Use Cases
 
-This app uses a simplified Retrieval-Augmented Generation (RAG) approach:
+- 📚 Knowledge synthesis
+- 🔍 Insight extraction
+- ⚖️ Multi-document comparison
+- 🧾 Executive briefings
+- 🏢 Internal enterprise copilots
+
+---
+
+## 🏗️ System Architecture
+
+```text
+User Uploads Documents
+        ↓
+Document Parsing Layer
+(PDF / DOCX / PPTX / CSV)
+        ↓
+Text Extraction
+        ↓
+Context Aggregation
+        ↓
+GPT-4o-mini Prompting
+        ↓
+AI Response Generation
+        ↓
+Chat-style UI Rendering
 ```
-Documents → Text Extraction → Context Injection → LLM → Answer
-```
-
-### Key idea
-
-Instead of using embeddings + vector databases, this version uses:
-
-**Prompt-based retrieval (RAG-lite)**
-
-This makes the system:
-- Faster to build  
-- Easier to deploy  
-- Ideal for MVPs and demos  
-
 ---
 
-## 🏗️ Tech Stack
+## ⚙️ Tech Stack
 
 | Layer | Technology |
-|------|------------|
-| UI | Streamlit |
+|---|---|
+| Frontend/UI | Streamlit |
 | LLM | OpenAI GPT-4o-mini |
 | PDF Parsing | PyPDF2 |
-| Word Parsing | python-docx |
-| PowerPoint Parsing | python-pptx |
-| Data Processing | pandas |
-| State Management | Streamlit session_state |
+| DOCX Parsing | python-docx |
+| PPTX Parsing | python-pptx |
+| Structured Data | pandas |
+| Deployment | Streamlit Cloud |
+| Version Control | GitHub |
 
 ---
 
 ## 💡 Features
 
-### 📂 Multi-Document Upload
-- Upload multiple files at once  
-- Supports:
-  - PDF  
-  - DOCX  
-  - PPTX  
-  - CSV  
-  - TXT  
+- 📂 Multi-file upload
+- 💬 Chat-style AI interaction
+- ⚡ Suggested questions
+- 👍 👎 Feedback system
+- 🧠 Context-aware responses
+- ☁️ Live cloud deployment
 
 ---
 
-### 💬 Chat-Based Interface
-- ChatGPT-style interaction  
-- Ask questions across all uploaded documents  
-- Maintains conversation history  
+## ⚖️ Product & Engineering Trade-offs
+
+| Decision | Reason |
+|---|---|
+| RAG-lite architecture | Faster MVP development |
+| No vector database in V1 | Reduced complexity and deployment overhead |
+| Streamlit instead of React | Rapid prototyping and iteration |
+| GPT-4o-mini | Lower inference cost and fast responses |
+| Desktop-first UX | Stable and cleaner demo experience |
 
 ---
 
-### ⚡ Suggested Questions
-Quick-start prompts to guide users:
-- Summarize documents  
-- Key insights  
-- Risks  
-- Compare documents  
+## 📌 Known Limitations (V1)
+
+- Optimized primarily for desktop usage
+- Some mobile-uploaded PDFs may fail due to encoding inconsistencies
+- OCR for scanned/image-based documents is not yet supported
+- No semantic retrieval/vector search yet
 
 ---
 
-### 👍 👎 Feedback System
-- Rate responses directly in the UI  
-- Simulates human-in-the-loop learning  
+## 🚀 Future Roadmap
+
+### V2
+- Vector embeddings + semantic retrieval
+- Inline citations
+- Persistent memory
+- Robust mobile support
+- OCR fallback for scanned documents
+
+### V3
+- Multi-agent orchestration
+- Enterprise integrations (Drive, Slack, Notion)
+- Analytics dashboard
+- Human-in-the-loop review workflows
 
 ---
 
-### 🧠 Context-Aware Answers
-- AI answers grounded in uploaded documents  
-- Uses prompt injection of document content  
-
----
-
-## 🖥️ Demo UI
-
-- Sidebar = Workspace (file upload + prompts)  
-- Main area = Chat interface  
-- Real-time responses with loading indicators  
-
----
-
-## ⚙️ Installation
+## ⚙️ Run Locally
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/ai-knowledge-copilot.git
+git clone https://github.com/skyplon/ai-knowledge-copilot.git
 cd ai-knowledge-copilot
 ```
-### 2. Create a virtual environment
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
 
-### 3. Install dependencies
+### 2. Install dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Set your OpenAI API key
+### 3. Configure API key
 
-Create a file:
-```
+Create:
+
+```text
 .streamlit/secrets.toml
 ```
+
 Add:
-```TOML
+
+```toml
 OPENAI_API_KEY = "your_api_key_here"
 ```
 
-### 5. Run the app
+### 4. Run the app
+
 ```bash
 streamlit run app.py
 ```
 
-## ☁️ Deployment (Streamlit Cloud)
-1. Push repo to GitHub
-2. Go to Streamlit Cloud
-3. Connect your repo
-4. Add your API key under "Secrets"
-5. Deploy 🚀
+---
 
-## 🧠 How it works
+## ☁️ Deployment
 
-### 1. Document ingestion
+This application is deployed using:
 
-Each file is parsed and converted into plain text:
+- GitHub
+- Streamlit Cloud
+- OpenAI API
 
-* PDFs → page text
-* DOCX → paragraphs
-* PPTX → slide content
-* CSV → table-to-text
-  
-### 2. Context construction
+Every push to the `main` branch automatically redeploys the app.
 
-All documents are combined into a single context:
-```
-Unified Knowledge Base
-```
-### 3. AI reasoning
+---
 
-The app sends:
-```
-[DOCUMENT CONTEXT] + [USER QUESTION]
-```
-to the model:
+## 🧠 AI / Product Thinking Behind the Project
 
-gpt-4o-mini
+This project was intentionally designed as a lightweight AI copilot MVP focused on:
 
-### 4. Response generation
+- Rapid experimentation
+- Human-centered AI UX
+- Enterprise knowledge workflows
+- AI product architecture trade-offs
+- Real-world deployment simplicity
 
-The model generates answers grounded in the documents.
+Rather than optimizing for scale in V1, the focus was on validating:
+- usability
+- workflow value
+- interaction patterns
+- deployment feasibility
 
-## ⚖️ Tradeoffs (Design Decisions)
-|  Decision	|  Reason |
-|----------|------------|
-|No vector | DB	Simpler, faster MVP
-|No embeddings |	Reduces complexity
-|Context injection |	Works well for small-medium datasets
+---
 
-## ⚠️ Known Limitations (V1)
+## 👤 Author
 
-- Optimized for desktop usage  
-- Some mobile-uploaded PDFs may fail due to encoding differences  
-- OCR for scanned documents not yet supported  
+Juan Navarrete
 
-Future versions will improve mobile compatibility and document processing robustness.
+Senior AI Product Manager focused on:
+- Enterprise AI systems
+- AI copilots
+- Agentic workflows
+- Knowledge intelligence platforms
 
-## 🔥 Future Improvements
-* True RAG (FAISS / embeddings)
-* Inline citations (like ChatGPT)
-* Document comparison (structured diff)
-* File tagging & filtering
-* Memory across sessions
-* Multimodal support (audio/video)
+🌎 GitHub: https://github.com/skyplon
 
-## 💼 Use Cases
-* AI product demos
-* Knowledge assistants
-* Internal documentation search
-* Customer support copilots
-* Research synthesis tools
-
-## 🧑‍💻 Author
-
-**Juan Navarrete**  
-Senior Product Manager — AI & ML  
-📍 California
+---
 
 ## ⭐ Support
 
-If you like this project, give it a ⭐ on GitHub!
+If you found this project interesting, feel free to give it a star ⭐
